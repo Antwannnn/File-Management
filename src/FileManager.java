@@ -1,11 +1,11 @@
 import java.io.*;
-import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class FileManager {
 
     private File file;
-    private FileOutputStream fileOutputStream;
+
+    private String absolutePath;
     private Scanner reader;
 
     public FileManager(File file){
@@ -13,16 +13,37 @@ public class FileManager {
     }
 
     protected void create(){
+
+        absolutePath = file.getAbsolutePath();
+        StringBuilder sb = new StringBuilder(absolutePath);
+        String reversedPath = sb.reverse().toString();
+        int charCount = absolutePath.length();
+
+        for (char ch : reversedPath.toCharArray()) {
+            sb.deleteCharAt(charCount);
+            charCount--;
+            if(ch == '\\')
+                break;
+        }
+
+        file = new File(sb.toString());
+
+        if (file.mkdir()) {
+            System.out.println("Directory created successfully");
+        }
+
+        file = new File(absolutePath);
+
         try{
             if(file.createNewFile()){
-                System.out.println(file.getName() + " has been successfully created !");
+                String fileName = file.getName();
+                System.out.println(fileName + " has been successfully created !");
             }
             else{
-                System.out.println(file.getName() + " already exists, try another name.");
+                System.out.println("File already exists, try another name.");
             }
         } catch (IOException e) {
             System.out.println("An error occurred during the creation of the file.");
-            e.printStackTrace();
         }
     }
 
@@ -32,20 +53,19 @@ public class FileManager {
         String lineContent;
 
         try{
-            fileOutputStream = new FileOutputStream(file);
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
             bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream));
             lineContent = typeLine(bufferedWriter);
 
         }catch(IOException e){
             System.out.println("An error occurred during the writing of the file.");
-            e.printStackTrace();
 
         }finally {
             try{
+                bufferedWriter.flush();
                 bufferedWriter.close();
-            }catch (Exception e){
+            }catch (IllegalStateException | IOException | NullPointerException e){
                 System.out.println("Couldn't close the buffer");
-                e.printStackTrace();
             }
         }
     }
@@ -62,45 +82,43 @@ public class FileManager {
             }
         }catch(FileNotFoundException e){
             System.out.println("File wasn't found.");
-            e.printStackTrace();
         }finally{
             try{
                 reader.close();
-            }catch(Exception e){
+            }catch(IllegalStateException e){
                 System.out.println("Couldn't close the reader");
-                e.printStackTrace();
             }
         }
     }
 
-    protected void readPrint(int headLine){
+    protected void readPrint(int line){
         String data;
         try {
             reader = new Scanner(file);
             int lineCount = 0;
             while (reader.hasNextLine()) {
                 data = reader.nextLine();
-                if (lineCount < headLine) {
+                if (lineCount < line) {
                     ++lineCount;
                     System.out.println("Line " + lineCount + ": " + data);
                 }
             }
         }catch(FileNotFoundException e){
             System.out.println("File wasn't found.");
-            e.printStackTrace();
         }finally{
             try{
                 reader.close();
-            }catch(Exception e){
+            }catch(IllegalStateException e){
                 System.out.println("Couldn't close the reader");
-                e.printStackTrace();
             }
 
         }
     }
 
+
+
     public void getFileInfos(){
-        if(file.exists()){
+        try{
             System.out.println("File name : " + file.getName());
             System.out.println("--------------------------------");
             System.out.println("Absolute path : " + file.getAbsolutePath());
@@ -108,8 +126,7 @@ public class FileManager {
             System.out.println("Writable : " + file.canWrite());
             System.out.println("Executable : " + file.canExecute());
             System.out.println("Size in Bytes : " + file.length());
-        }
-        else{
+        }catch(Exception e){
             System.out.println("Specified file doesn't exist.");
         }
     }
@@ -124,14 +141,14 @@ public class FileManager {
                 bw.write(value);
                 bw.newLine();
             }catch(IOException e){
-                System.out.println("Can't access to next line");
-                e.printStackTrace();
+                System.out.println("Can't access to the next line");
             }
             System.out.println("Line added : " + "\"" + value + "\"");
         }
 
         return value;
     }
+
 
 
 }
